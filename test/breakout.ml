@@ -1,7 +1,7 @@
 (*----------------------------------------------------------------------------
    Copyright (c) %%COPYRIGHTYEAR%%, Daniel C. Bünzli. All rights reserved.
    Distributed under a BSD license, see license at the end of the file.
-  ----------------------------------------------------------------------------*)
+  ---------------------------------------------------------------------------*)
 
 (* Breakout clone. *)
 
@@ -97,7 +97,7 @@ end = struct
   let flush () = pr "%!"
   let reset () = clear (); pr "\x1Bc"; flush ()
   let init () = 
-    pr "\x1B[H\x1B[30,47m\x1B[7l"; clear (); flush ();
+    pr "\x1B[H\x1B[30;47m\x1B[7l"; clear (); flush ();
     at_exit (reset)
 
   let text ?(center = true) ?(color = 7) pos str =
@@ -110,7 +110,7 @@ end = struct
     let (w, h) = V2.to_ints (Rect.size r) in
     pr "\x1B7\x1B[%dm" color;
     for y' = y to y + h - 1 do
-      pr "\x1B\x1B[%d;%df" y' x; for i = 1 to w do pr " " done
+      pr "\x1B[%d;%df" y' x; for i = 1 to w do pr " " done
     done;
     pr "\x1B8"
 
@@ -123,13 +123,13 @@ module Input : sig                              (* Keyboard and time events. *)
   val key : char event                                    (* keyboard event. *)
   val gather : unit -> unit
 end = struct
-  let reset tattr () = Unix.tcsetattr Unix.stdin Unix.TCSAFLUSH tattr
   let init () =                        (* suppress input echo and buffering. *)
+    let reset tattr () = Unix.tcsetattr Unix.stdin Unix.TCSAFLUSH tattr in
     let attr = Unix.tcgetattr Unix.stdin in
     let attr' = { attr with Unix.c_echo = false; c_icanon = false } in
     let quit _ = exit 0 in
     at_exit (reset attr);
-    Unix.tcsetattr Unix.stdin Unix.TCSAFLUSH attr';
+    Unix.tcsetattr Unix.stdin Unix.TCSANOW attr';
     Sys.set_signal Sys.sigquit (Sys.Signal_handle quit);
     Sys.set_signal Sys.sigint (Sys.Signal_handle quit);
     Sys.set_signal Sys.sigfpe (Sys.Signal_handle quit)
@@ -177,7 +177,7 @@ end = struct
 	if rmin <= cmax then ctime cmax rmin d n else None
       else Some (V2.o, 0.)                         (* initially overlapping. *)
   | d when d > 0. ->
-      if rmin -. d > cmax then None else                    (* moving apart. *) 
+      if rmin -. d > cmax then None else                    (* moving apart. *)
       if rmax -. d <= cmin then 
 	if rmax >= cmin then ctime cmin rmax d (V2.neg n) else None
       else Some (V2.o, 0.)                         (* initially overlapping. *)
@@ -229,9 +229,10 @@ end = struct
       let collide dp ball =
 	let c = match cmin left (Rect.xmin ball) (V2.x dp) V2.ex with
 	| Some _ as c -> c
-	| None -> match cmax right (Rect.xmax ball) (V2.x dp) (V2.neg V2.ex)with
-	  | Some _ as c -> c
-	  | None -> cmin top (Rect.ymin ball) (V2.y dp) V2.ey
+	| None -> 
+	    match cmax right (Rect.xmax ball) (V2.x dp) (V2.neg V2.ex) with
+	    | Some _ as c -> c
+	    | None -> cmin top (Rect.ymin ball) (V2.y dp) V2.ey
 	in
 	match c with 
 	| None -> None 
@@ -294,7 +295,7 @@ end = struct
 	  in
 	  match aux None [] bricks ball dp with
 	  | None, bl -> None, bl
-	  | Some (n, t), bl -> Some (n, V2.sub (Rect.o ball) (V2.smul t dp)), bl
+	  | Some (n, t), bl -> Some (n, V2.sub (Rect.o ball) (V2.smul t dp)),bl
 	in
 	S.sample collide dp (S.Pair.pair ball bricks) 
       in
@@ -408,7 +409,7 @@ end = struct
     let g = Game.create Draw.frame dt moves in
     let outcome = Game.outcome g in 
     let sound = E.map Draw.beep (Game.collisions g) in
-    let output = S.l4 Render.game (Game.ball g) (Game.paddle g) (Game.bricks g) 
+    let output = S.l4 Render.game (Game.ball g) (Game.paddle g) (Game.bricks g)
 	(Game.brick_count g)
     in
     let stop () = E.stop sound; S.stop output in
@@ -477,4 +478,4 @@ let ui = main ()                               (* keep a ref. to avoid g.c. *)
   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  ----------------------------------------------------------------------------*)
+  ---------------------------------------------------------------------------*)
