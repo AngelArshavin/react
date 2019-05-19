@@ -11,6 +11,10 @@ signal, this lets the client chooses the concrete timeline.
 React is made of a single, independent, module and distributed under
 the new BSD license.
 
+Project home page : http://erratique.ch/software/react
+Contact : daniel.buenzl i@erratique.ch
+
+
 # Installation
 
 React was tested with OCaml 3.11. react.mli and react.ml contain
