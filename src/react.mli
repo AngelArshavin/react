@@ -47,6 +47,13 @@ module E : sig
 
       {b Warning.} [send] must not be executed inside an update cycle. *)
 
+  val retain : 'a event -> (unit -> unit) -> [ `R of (unit -> unit) ]
+  (** [retain e c] keeps a reference to the closure [c] in [e] and
+      returns the previously retained value. [c] will {e never} be
+      invoked.
+
+      {b Raises.} [Invalid_argument] on {!E.never}. *)
+
   val stop : 'a event -> unit
   (** [stop e] stops [e] from occuring. It conceptually becomes
       {!never} and cannot be restarted. Allows to 
@@ -245,6 +252,13 @@ module S : sig
       {b Warning.} If executed in an {{:React.html#update}update
       cycle} may return a non up-to-date value or raise [Failure] if
       the signal is not yet initialized. *)
+
+  val retain : 'a signal -> (unit -> unit) -> [ `R of (unit -> unit) ]
+  (** [retain s c] keeps a reference to the closure [c] in [s] and
+      returns the previously retained value. [c] will {e never} be
+      invoked.
+
+      {b Raises.} [Invalid_argument] on constant signals. *)
 
   (**/**)
   val eq_fun : 'a signal -> ('a -> 'a -> bool) option
@@ -769,12 +783,19 @@ let fl' x y = S.l2 f x y                            (* efficient *)
     be opened in specific scopes. For example if you are dealing with
     float signals you can open {!S.Float}.  
 {[open React 
-open React.S.Float (* float signals *)
+open React.S.Float 
 
-let f t = sqrt t *. sin t
+let f t = sqrt t *. sin t (* f is defined on float signals *)
 ...
 open Pervasives (* back to pervasives floats *)
 ]}
+   If you are using OCaml 3.12 or later you can also use the [let open]
+   construct 
+{[let open React.S.Float in 
+let f t = sqrt t *. sin t in (* f is defined on float signals *)
+...
+]}
+
   {2:recursion Mutual and self reference}
 
   Mutual and self reference among time varying values occurs naturally
