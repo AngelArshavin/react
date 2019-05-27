@@ -28,7 +28,7 @@ action ()
   case $1 in
     module) ocb `$OASISQ Name`.cmx ;;
     doc)
-      ocb -ocamldoc "$OCAMLDOC" -no-links \
+      ocb -ocamldoc "$OCAMLDOC" -I src -no-links \
       doc/api.docdir/index.html
       $CP doc/style.css _build/doc/api.docdir/style.css ;;
     distrib) distrib ;;
@@ -119,7 +119,7 @@ publish ()
     project_info
     DIRNAME=$NAME-$VERSION
     ARCHIVE=/tmp/$DIRNAME.tbz
-    SITEGENROOT=~/erratique
+    SITEGENROOT=~/sync/erratique
     PAGEROOT=$SITEGENROOT/maps/software/$NAME
 
     $CP $ARCHIVE $PAGEROOT/releases/
