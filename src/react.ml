@@ -1070,9 +1070,11 @@ module S = struct
   let switch ?(eq = ( = )) = function
   | Const s -> s
   | Smut mss -> 
-      let r = rsucc mss.snode in
-      let m' = smut r eq in 
       let src = ref (sval mss) in                   (* current signal source. *)
+      let r = match !src with 
+      | Smut ms -> rsucc2 ms.snode mss.snode | Const _ -> rsucc mss.snode
+      in
+      let m' = smut r eq in
       let rec p () = match !src with
       | Smut m -> [ mss.snode; m.snode] | Const _ -> [ mss.snode ]
       and u c = 
@@ -1251,6 +1253,9 @@ module S = struct
   end
   
   module Int = struct
+    let zero = Const 0
+    let one = Const 1
+    let minus_one = Const (-1)
     let eq : int -> int -> bool = ( = )
     let ( ~- ) s = l1 ~eq ( ~- ) s
     let succ s = l1 ~eq succ s
@@ -1272,6 +1277,9 @@ module S = struct
   end
   
   module Float = struct
+    let zero = Const 0. 
+    let one = Const 1. 
+    let minus_one = Const (-1.)
     let eq : float -> float -> bool = ( = )
     let ( ~-. ) s = l1 ~eq ( ~-. ) s
     let ( +. ) s s' = l2 ~eq ( +. ) s s'
@@ -1318,7 +1326,12 @@ module S = struct
     let fst ?eq s = l1 ?eq fst s
     let snd ?eq s = l1 ?eq snd s
   end
-  
+
+  module Option = struct
+    let none = Const None
+    let some ?eq i s = fmap ?eq (fun v -> v) i s
+  end
+
   module Compare = struct 
     let eq = Bool.eq 
     let ( = ) s s' = l2 ~eq ( = ) s s'

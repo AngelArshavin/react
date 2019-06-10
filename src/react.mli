@@ -495,14 +495,17 @@ module S : sig
       operators. *)
 
   module Bool : sig
-    val one : bool signal 
     val zero : bool signal
+    val one : bool signal 
     val not : bool signal -> bool signal
     val ( && ) : bool signal -> bool signal -> bool signal
     val ( || ) : bool signal -> bool signal -> bool signal
   end
   
   module Int : sig
+    val zero : int signal
+    val one : int signal 
+    val minus_one : int signal
     val ( ~- ) : int signal -> int signal
     val succ : int signal -> int signal
     val pred : int signal -> int signal
@@ -523,6 +526,9 @@ module S : sig
   end
 
   module Float : sig
+    val zero : float signal
+    val one : float signal 
+    val minus_one : float signal
     val ( ~-. ) : float signal -> float signal
     val ( +. ) : float signal -> float signal -> float signal
     val ( -. ) : float signal -> float signal -> float signal
@@ -568,6 +574,14 @@ module S : sig
       'a signal -> 'b signal -> ('a * 'b) signal
     val fst : ?eq:('a -> 'a -> bool) -> ('a * 'b) signal -> 'a signal
     val snd : ?eq:('a -> 'a -> bool) -> ('b * 'a) signal -> 'a signal
+  end
+
+  module Option : sig
+    val none : 'a option signal
+    (** [none] is [S.const None]. *)
+
+    val some : ?eq:('a -> 'a -> bool) -> 'a -> 'a option signal -> 'a signal
+    (** [some i s] is [fmap (fun v -> v) i s]. *)
   end
 
   module Compare : sig
