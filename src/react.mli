@@ -239,12 +239,41 @@ module E : sig
       {b Raises.} [Invalid_argument] if [e'] is directly a delayed event (i.e. 
       an event given to a fixing function). *)
 
+  (** {1 Lifting} 
+
+      Lifting combinators. For a given [n] the semantics is: 
+      {ul
+      {- \[[ln f e1 ... en]\]{_t} [= Some (f v1 ... vn)] if for all 
+         i : \[[ei]\]{_t} [= Some vi].}
+      {- \[[ln f e1 ... en]\]{_t} [= None] otherwise.}} *) 
+
+  val l1 : ('a -> 'b) -> 'a event -> 'b event 
+  val l2 : ('a -> 'b -> 'c) -> 'a event -> 'b event -> 'c event
+  val l3 : ('a -> 'b -> 'c -> 'd) -> 'a event -> 'b event -> 'c event -> 
+    'd event
+  val l4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a event -> 'b event -> 'c event -> 
+    'd event -> 'e event 
+  val l5 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a event -> 'b event -> 
+    'c event -> 'd event -> 'e event -> 'f event 
+  val l6 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a event -> 'b event -> 
+    'c event -> 'd event -> 'e event -> 'f event -> 'g event
+
   (** {1 Pervasives support} *) 
 
   (** Events with option occurences. *) 
   module Option : sig
-    val some : 'a option event -> 'a event 
-    (** [some e] is [fmap (fun v -> v) e]. *) 
+    val some : 'a event -> 'a option event 
+    (** [some e] is [map (fun v -> Some v) e]. *) 
+
+    val value : ?default:'a signal -> 'a option event -> 'a event 
+    (** [value default e] either silences [None] occurences if [default] is
+        unspecified or replaces them by the value of [default] at the occurence
+        time.
+        {ul 
+        {- \[[value ~default e]\]{_t}[ = v] if \[[e]\]{_t} [= Some (Some v)].}
+        {- \[[value ?default:None e]\]{_t}[ = None] if \[[e]\]{_t} = [None].}
+        {- \[[value ?default:(Some s) e]\]{_t}[ = v] 
+           if \[[e]\]{_t} = [None] and \[[s]\]{_t} [= v].}} *)
   end
 end
 
@@ -580,8 +609,29 @@ module S : sig
     val none : 'a option signal
     (** [none] is [S.const None]. *)
 
-    val some : ?eq:('a -> 'a -> bool) -> 'a -> 'a option signal -> 'a signal
-    (** [some i s] is [fmap (fun v -> v) i s]. *)
+    val some : 'a signal -> 'a option signal 
+    (** [some s] is [S.map ~eq (fun v -> Some v) None], where [eq] uses
+        [s]'s equality function to test the [Some v]'s equalities. *)
+
+    val value : ?eq:('a -> 'a -> bool) -> 
+      default:[`Init of 'a signal | `Always of 'a signal ] -> 
+      'a option signal -> 'a signal
+    (** [value default s] is [s] with only its [Some v] values. 
+        Whenever [s] is [None], if [default] is [`Always dv] then 
+        the current value of [dv] is used instead. If [default]
+        is [`Init dv] the current value of [dv] is only used
+        if there's no value at creation time, otherwise the last
+        [Some v] value of [s] is used.
+        {ul 
+        {- \[[value ~default s]\]{_t} [= v] if \[[s]\]{_t} [= Some v]}
+        {- \[[value ~default:(`Always d) s]\]{_t} [=] \[[d]\]{_t} 
+          if \[[s]\]{_t} [= None]}
+        {- \[[value ~default:(`Init d) s]\]{_0} [=] \[[d]\]{_0} 
+          if \[[s]\]{_0} [= None]}
+        {- \[[value ~default:(`Init d) s]\]{_t} [=]
+           \[[value ~default:(`Init d) s]\]{_t'}
+          if \[[s]\]{_t} [= None] and t' is the greatest t' < t
+          with \[[s]\]{_t'} [<> None] or 0 if there is no such [t'].}} *)
   end
 
   module Compare : sig

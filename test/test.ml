@@ -340,6 +340,63 @@ let test_fix () =
   List.iter empty [assert_l; !assert_dl];
   keep_eref create_dyn
 
+let test_lifts () = 
+  let x1, send_x1 = E.create () in 
+  let x2, send_x2 = E.create () in 
+  let x3, send_x3 = E.create () in 
+  let x4, send_x4 = E.create () in 
+  let x5, send_x5 = E.create () in 
+  let x6, send_x6 = E.create () in 
+  let f1 a = 1 + a in
+  let f2 a0 a1 = a0 + a1 in 
+  let f3 a0 a1 a2 = a0 + a1 + a2 in 
+  let f4 a0 a1 a2 a3 = a0 + a1 + a2 + a3 in 
+  let f5 a0 a1 a2 a3 a4 = a0 + a1 + a2 + a3 + a4 in 
+  let f6 a0 a1 a2 a3 a4 a5 = a0 + a1 + a2 + a3 + a4 + a5 in 
+  let v1 = E.l1 f1 x1 in
+  let v2 = E.l2 f2 x1 x2 in
+  let v3 = E.l3 f3 x1 x2 x3 in
+  let v4 = E.l4 f4 x1 x2 x3 x4 in
+  let v5 = E.l5 f5 x1 x2 x3 x4 x5 in
+  let v6 = E.l6 f6 x1 x2 x3 x4 x5 x6 in
+  let a_v1 = occs v1 [2; 2; 2; 2; 2; 2;] in 
+  let a_v2 = occs v2 [   3; 3; 3; 3; 3;] in 
+  let a_v3 = occs v3 [      6; 6; 6; 6;] in   
+  let a_v4 = occs v4 [        10;10;10;] in 
+  let a_v5 = occs v5 [           15;15;] in 
+  let a_v6 = occs v6 [              21;] in 
+  let with_step f = 
+    let s = Step.create () in
+    f s; Step.execute s 
+  in
+  let s1 s = send_x1 ~step:s 1 in 
+  let s2 s = s1 s; send_x2 ~step:s 2 in 
+  let s3 s = s2 s; send_x3 ~step:s 3 in
+  let s4 s = s3 s; send_x4 ~step:s 4 in
+  let s5 s = s4 s; send_x5 ~step:s 5 in
+  let s6 s = s5 s; send_x6 ~step:s 6 in
+  with_step s1; with_step s2; with_step s3; 
+  with_step s4; with_step s5; with_step s6; 
+  List.iter empty [ a_v1; a_v2; a_v3; a_v4; a_v5; a_v6;]; 
+  ()
+  
+let test_option () = 
+  let x, send_x = E.create () in 
+  let s, set_s = S.create 4 in 
+  let some = E.Option.some (S.changes s) in 
+  let e0 = E.Option.value x in 
+  let e1 = E.Option.value ~default:(S.const 2) x in 
+  let e2 = E.Option.value ~default:s x in 
+  let assert_some = occs some [ Some 42;] in 
+  let assert_e0 = occs e0 [1; 5; ] in 
+  let assert_e1 = occs e1 [1; 2; 5; 2] in 
+  let assert_e2 = occs e2 [1; 4; 5; 42] in 
+  send_x (Some 1); send_x None; set_s 42; 
+  send_x (Some 5); send_x None; 
+  empty assert_some;
+  List.iter empty [ assert_e0; assert_e1; assert_e2];
+  ()
+
 let test_events () = 
   test_no_leak ();
   test_once_drop_once ();
@@ -354,7 +411,10 @@ let test_events () =
   test_select ();
   test_merge ();
   test_switch ();
-  test_fix ()
+  test_fix (); 
+  test_lifts (); 
+  test_option ();
+  ()
 
 (* Signal tests *)
 
@@ -1076,6 +1136,55 @@ let test_lifters () =
                     !a_dx4; !a_dx5; !a_dx6 ];
   keep_sref create_dyn
 
+let test_option () = 
+  let b0, set_b0 = S.create None in 
+  let b1, set_b1 = S.create (Some 1) in 
+  let b2 = S.const None in
+  let b3 = S.const (Some 3) in 
+  let d, set_d = S.create 512 in
+  let dsome = S.Option.some d in
+  let s00 = S.Option.value ~default:(`Init (S.const 255)) b0 in 
+  let s01 = S.Option.value ~default:(`Init (S.const 255)) b1 in 
+  let s02 = S.Option.value ~default:(`Init (S.const 255)) b2 in 
+  let s03 = S.Option.value ~default:(`Init (S.const 255)) b3 in 
+  let s10 = S.Option.value ~default:(`Always (S.const 255)) b0 in 
+  let s11 = S.Option.value ~default:(`Always (S.const 255)) b1 in 
+  let s12 = S.Option.value ~default:(`Always (S.const 255)) b2 in 
+  let s13 = S.Option.value ~default:(`Always (S.const 255)) b3 in 
+  let s20 = S.Option.value ~default:(`Init d) b0 in 
+  let s21 = S.Option.value ~default:(`Init d) b1 in 
+  let s22 = S.Option.value ~default:(`Init d) b2 in 
+  let s23 = S.Option.value ~default:(`Init d) b3 in 
+  let s30 = S.Option.value ~default:(`Always d) b0 in 
+  let s31 = S.Option.value ~default:(`Always d) b1 in 
+  let s32 = S.Option.value ~default:(`Always d) b2 in 
+  let s33 = S.Option.value ~default:(`Always d) b3 in 
+  let a_dsome = vals dsome [ Some 512; Some 1024; Some 2048;] in
+  let a_s00 = vals s00 [255;3] in
+  let a_s01 = vals s01 [1;] in
+  let a_s02 = vals s02 [255;] in
+  let a_s03 = vals s03 [3;] in
+  let a_s10 = vals s10 [255;3;255] in
+  let a_s11 = vals s11 [1;255;] in
+  let a_s12 = vals s12 [255] in
+  let a_s13 = vals s13 [3] in
+  let a_s20 = vals s20 [512;3] in
+  let a_s21 = vals s21 [1;] in
+  let a_s22 = vals s22 [512] in
+  let a_s23 = vals s23 [3] in
+  let a_s30 = vals s30 [512;3;1024;2048] in
+  let a_s31 = vals s31 [1;512;1024;2048] in
+  let a_s32 = vals s32 [512] in
+  let a_s33 = vals s33 [3] in
+  set_b0 (Some 3); set_b1 None; set_d 1024; set_b0 None; set_d 2048;
+  empty a_dsome;
+  List.iter empty [ a_s00; a_s01; a_s02; a_s03; 
+                    a_s10; a_s11; a_s12; a_s13; 
+                    a_s20; a_s21; a_s22; a_s23; 
+                    a_s30; a_s31; a_s32; a_s33; ];
+  ()
+
+
 let test_signals () =   
   test_no_leak ();
   test_hold ();
@@ -1105,6 +1214,7 @@ let test_signals () =
   test_fix ();
   test_fix' ();
   test_lifters ();
+  test_option ();
   ()
 
 (* Test steps *) 

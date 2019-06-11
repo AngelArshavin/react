@@ -774,8 +774,151 @@ module E = struct
         add_dep m' m.enode;
         r
 
+  (* Lifting *) 
+
+  let l1 = map 
+  let l2 f e0 e1 = match e0, e1 with 
+  | Never, _ -> Never 
+  | _, Never -> Never
+  | Emut m0, Emut m1 -> 
+      let r = rsucc2 m0.enode m1.enode in 
+      let m' = emut r in 
+      let rec p () = [ m0.enode; m1.enode ] in 
+      let u c = match !(m0.ev), !(m1.ev)  with 
+      | None, _
+      | _, None -> ()
+      | Some v0, Some v1 -> eupdate (f v0 v1) m' c 
+      in
+      add_dep m0 m'.enode; 
+      add_dep m1 m'.enode; 
+      event m' p u
+    
+  let l3 f e0 e1 e2 = match e0, e1, e2 with 
+  | Never, _, _ -> Never 
+  | _, Never, _ -> Never
+  | _, _, Never -> Never
+  | Emut m0, Emut m1, Emut m2 -> 
+      let r = rsucc (rmax (rmax m0.enode m1.enode) m2.enode) in 
+      let m' = emut r in 
+      let rec p () = [ m0.enode; m1.enode; m2.enode ] in 
+      let u c = match !(m0.ev), !(m1.ev), !(m2.ev)  with 
+      | None, _, _
+      | _, None, _
+      | _, _, None -> ()
+      | Some v0, Some v1, Some v2 -> eupdate (f v0 v1 v2) m' c 
+      in
+      add_dep m0 m'.enode; 
+      add_dep m1 m'.enode; 
+      add_dep m2 m'.enode; 
+      event m' p u
+
+
+  let l4 f e0 e1 e2 e3 = match e0, e1, e2, e3 with 
+  | Never, _, _, _ -> Never 
+  | _, Never, _, _ -> Never
+  | _, _, Never, _ -> Never
+  | _, _, _, Never -> Never
+  | Emut m0, Emut m1, Emut m2, Emut m3 -> 
+      let r = rsucc (rmax (rmax m0.enode m1.enode) (rmax m2.enode m3.enode)) in 
+      let m' = emut r in 
+      let rec p () = [ m0.enode; m1.enode; m2.enode; m3.enode ] in 
+      let u c = match !(m0.ev), !(m1.ev), !(m2.ev), !(m3.ev) with 
+      | None, _, _, _
+      | _, None, _, _
+      | _, _, None, _
+      | _, _, _, None -> ()
+      | Some v0, Some v1, Some v2, Some v3 -> eupdate (f v0 v1 v2 v3) m' c 
+      in
+      add_dep m0 m'.enode; 
+      add_dep m1 m'.enode; 
+      add_dep m2 m'.enode; 
+      add_dep m3 m'.enode; 
+      event m' p u
+
+  let l5 f e0 e1 e2 e3 e4 = match e0, e1, e2, e3, e4 with 
+  | Never, _, _, _, _ -> Never 
+  | _, Never, _, _, _ -> Never
+  | _, _, Never, _, _ -> Never
+  | _, _, _, Never, _ -> Never
+  | _, _, _, _, Never -> Never
+  | Emut m0, Emut m1, Emut m2, Emut m3, Emut m4 -> 
+      let r = 
+        rsucc (rmax (rmax (rmax m0.enode m1.enode) (rmax m2.enode m3.enode))
+          m4.enode)
+      in 
+      let m' = emut r in 
+      let rec p () = [ m0.enode; m1.enode; m2.enode; m3.enode; m4.enode ] in 
+      let u c = match !(m0.ev), !(m1.ev), !(m2.ev), !(m3.ev), !(m4.ev) with 
+      | None, _, _, _, _
+      | _, None, _, _, _
+      | _, _, None, _, _
+      | _, _, _, None, _
+      | _, _, _, _, None -> ()
+      | Some v0, Some v1, Some v2, Some v3, Some v4 -> 
+          eupdate (f v0 v1 v2 v3 v4) m' c 
+      in
+      add_dep m0 m'.enode; 
+      add_dep m1 m'.enode; 
+      add_dep m2 m'.enode; 
+      add_dep m3 m'.enode; 
+      add_dep m4 m'.enode; 
+      event m' p u
+
+  let l6 f e0 e1 e2 e3 e4 e5 = match e0, e1, e2, e3, e4, e5 with 
+  | Never, _, _, _, _, _ -> Never 
+  | _, Never, _, _, _, _ -> Never
+  | _, _, Never, _, _, _ -> Never
+  | _, _, _, Never, _, _ -> Never
+  | _, _, _, _, Never, _ -> Never
+  | _, _, _, _, _, Never -> Never
+  | Emut m0, Emut m1, Emut m2, Emut m3, Emut m4, Emut m5 -> 
+      let r = 
+        rsucc (rmax (rmax (rmax m0.enode m1.enode) (rmax m2.enode m3.enode))
+          (rmax m4.enode m5.enode))
+      in 
+      let m' = emut r in 
+      let rec p () = [ m0.enode; m1.enode; m2.enode; m3.enode; m4.enode; 
+                       m5.enode; ] in 
+      let u c = match !(m0.ev), !(m1.ev), !(m2.ev), !(m3.ev), !(m4.ev), 
+                      !(m5.ev) with 
+      | None, _, _, _, _, _
+      | _, None, _, _, _, _
+      | _, _, None, _, _, _
+      | _, _, _, None, _, _
+      | _, _, _, _, None, _
+      | _, _, _, _, _, None -> ()
+      | Some v0, Some v1, Some v2, Some v3, Some v4, Some v5 -> 
+          eupdate (f v0 v1 v2 v3 v4 v5) m' c 
+      in
+      add_dep m0 m'.enode; 
+      add_dep m1 m'.enode; 
+      add_dep m2 m'.enode; 
+      add_dep m3 m'.enode; 
+      add_dep m4 m'.enode; 
+      add_dep m5 m'.enode; 
+      event m' p u
+
+  (* Pervasives support *) 
+
   module Option = struct
-    let some e = fmap (fun v -> v) e
+    let some e = map (fun v -> Some v) e 
+    let value ?default e = match default with 
+    | None -> fmap (fun v -> v) e
+    | Some (Const dv) -> map (function None -> dv | Some v -> v) e
+    | Some (Smut ms) -> 
+        match e with 
+        | Never -> Never
+        | Emut m ->
+            let m' = emut (rsucc2 m.enode ms.snode) in 
+            let rec p () = [ m.enode; ms.snode ]
+            and u c = match !(m.ev) with 
+            | None -> () (* ms updated. *)
+            | Some None -> eupdate (sval ms) m' c 
+            | Some Some v -> eupdate v m' c
+            in
+            add_dep m m'.enode; 
+            Node.add_dep ms.snode m'.enode; 
+            event m' p u
   end
 end
 
@@ -1329,7 +1472,81 @@ module S = struct
 
   module Option = struct
     let none = Const None
-    let some ?eq i s = fmap ?eq (fun v -> v) i s
+    let some s = 
+      let eq = match eq_fun s with 
+      | None -> None 
+      | Some eq -> 
+          let eq v v' = match v, v' with 
+          | Some v, Some v' -> eq v v'
+          | _ -> assert false 
+          in
+          Some eq
+      in
+      map ?eq (fun v -> Some v) s
+
+    let value ?(eq = ( = )) ~default s = match s with 
+    | Const (Some v) -> Const v
+    | Const None -> 
+        let d = match default with `Init d -> d | `Always d -> d in 
+        begin match d with 
+        | Const d -> Const d 
+        | Smut md ->
+            match Step.find_unfinished [md.snode] with 
+            | c when c == Step.nil -> Const (sval md)
+            | c ->
+                let m' = smut (rsucc md.snode) eq in
+                let rec p () = [ md.snode ] 
+                and u c = 
+                  Node.rem_dep md.snode m'.snode;
+                  supdate (sval md) m' c;
+                  Node.stop m'.snode
+                in
+                Node.add_dep md.snode m'.snode; 
+                signal m' p u
+        end
+    | Smut m ->
+        match default with 
+        | `Init (Const d) -> fmap ~eq (fun v -> v) d s
+        | `Always (Const d) -> map ~eq (function None -> d | Some v -> v) s
+        | `Init (Smut md) ->
+            begin match Step.find_unfinished [md.snode] with 
+            | c when c == Step.nil -> 
+                let m' = smut (rsucc m.snode) eq in
+                let rec p () = [ m.snode ] 
+                and u c = match sval m with 
+                | Some v -> supdate v m' c | None -> () 
+                in
+                Node.add_dep m.snode m'.snode; 
+                signal ~i:(sval md) m' p u 
+            | c -> 
+                let m' = smut (rsucc2 m.snode md.snode) eq in 
+                let rec p () = [ m.snode ] in (* subsequent updates *) 
+                let u c = match sval m with 
+                | Some v -> supdate v m' c | None -> ()
+                in
+                let rec p_first () = [ m.snode; md.snode ] in (* first update *)
+                let u_first c = 
+                  Node.rem_dep md.snode m'.snode; 
+                  begin match sval m with 
+                  | None -> supdate (sval md) m' c 
+                  | Some v -> supdate v m' c 
+                  end;
+                  Node.bind m'.snode p u
+                in
+                Node.add_dep m.snode m'.snode; 
+                Node.add_dep md.snode m'.snode; 
+                signal m' p_first u_first
+            end
+        | `Always (Smut md) ->
+            let m' = smut (rsucc2 m.snode md.snode) eq in 
+            let rec p () = [ m.snode; md.snode ] in 
+            let u c = match sval m with 
+            | Some v -> supdate v m' c 
+            | None -> supdate (sval md) m' c 
+            in
+            Node.add_dep m.snode m'.snode; 
+            Node.add_dep md.snode m'.snode; 
+            signal m' p u
   end
 
   module Compare = struct 
