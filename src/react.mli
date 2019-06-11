@@ -529,6 +529,25 @@ module S : sig
     val not : bool signal -> bool signal
     val ( && ) : bool signal -> bool signal -> bool signal
     val ( || ) : bool signal -> bool signal -> bool signal
+
+    val edge : bool signal -> bool event
+    (** [edge s] is [changes s]. *) 
+
+    val rise : bool signal -> unit event 
+    (** [rise s] is [E.fmap (fun b -> if b then Some () else None) (edge s)].*)
+
+    val fall : bool signal -> unit event
+    (** [fall s] is [E.fmap (fun b -> if b then None else Some ()) (edge s)].*)
+
+    val flip : bool -> 'a event -> bool signal 
+    (** [flip b e] is a signal whose boolean value flips each time 
+        [e] occurs. [b] is the initial signal value. 
+        {ul
+        {- \[[flip b e]\]{_0} [= not b] if \[[e]\]{_0} [= Some _]}        
+        {- \[[flip b e]\]{_t} [= b] if \[[e]\]{_<=t} [= None]}
+        {- \[[flip b e]\]{_t} [=] [not] \[[flip b e]\]{_t-dt}
+           if \[[e]\]{_t} [= Some _]}}
+*) 
   end
   
   module Int : sig
